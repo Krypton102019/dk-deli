@@ -1,98 +1,151 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { CategorySlider } from '@/components/home/CategorySlider';
+import { HeroBanner } from '@/components/home/HeroBanner';
+import { RestaurantCard } from '@/components/home/RestaurantCard';
+import { SearchBar } from '@/components/home/SearchBar';
+import { MainLayout } from '@/components/layout/MainLayout';
+import {
+  categories,
+  getPopularRestaurants,
+  getRestaurantsByCategory,
+  searchRestaurants,
+} from '@/lib/mockData';
+import { EmptyState } from '@/screens/EmptyState';
+import React, { useCallback, useMemo, useState } from 'react';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+export default function HomeScreen({ navigation }: any) {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
 
-export default function HomeScreen() {
+  const filteredRestaurants = useMemo(() => {
+    if (searchQuery.trim()) {
+      return searchRestaurants(searchQuery);
+    }
+    return getRestaurantsByCategory(selectedCategory);
+  }, [searchQuery, selectedCategory]);
+
+  const popularRestaurants = useMemo(() => getPopularRestaurants(), []);
+
+  const handleCategorySelect = useCallback((categoryId: string) => {
+    setSelectedCategory(categoryId);
+    setSearchQuery('');
+  }, []);
+
+  const handleRestaurantPress = useCallback(
+    (restaurantId: string) => {
+      navigation.navigate('RestaurantDetail', { id: restaurantId });
+    },
+    [navigation]
+  );
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+    <MainLayout navigation={navigation} currentRoute="Home">
+      <ScrollView showsVerticalScrollIndicator={false}>
+        <HeroBanner />
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+        <SearchBar value={searchQuery} onChange={setSearchQuery} />
+
+        <CategorySlider
+          categories={categories}
+          selectedCategory={selectedCategory}
+          onSelectCategory={handleCategorySelect}
+        />
+
+        {/* Popular Restaurants */}
+        {!searchQuery && selectedCategory === 'all' && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <View>
+                <Text style={styles.sectionTitle}>Popular Now</Text>
+                <Text style={styles.sectionSubtitle}>လူကြိုက်များသော</Text>
+              </View>
+            </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.horizontalScroll}
+            >
+              {popularRestaurants.slice(0, 4).map((restaurant, index) => (
+                <View key={restaurant.id} style={styles.horizontalCard}>
+                  <RestaurantCard
+                    restaurant={restaurant}
+                    variant="horizontal"
+                    index={index}
+                    onPress={() => handleRestaurantPress(restaurant.id)}
+                  />
+                </View>
+              ))}
+            </ScrollView>
+          </View>
+        )}
+
+        {/* All Restaurants */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <View>
+              <Text style={styles.sectionTitle}>
+                {searchQuery ? 'Search Results' : 'All Restaurants'}
+              </Text>
+              <Text style={styles.sectionSubtitle}>
+                {searchQuery ? 'ရှာဖွေမှုရလဒ်များ' : 'စားသောက်ဆိုင်အားလုံး'}
+              </Text>
+            </View>
+            <Text style={styles.resultCount}>
+              {filteredRestaurants.length} places
+            </Text>
+          </View>
+
+          {filteredRestaurants.length > 0 ? (
+            filteredRestaurants.map((restaurant, index) => (
+              <RestaurantCard
+                key={restaurant.id}
+                restaurant={restaurant}
+                index={index}
+                onPress={() => handleRestaurantPress(restaurant.id)}
+              />
+            ))
+          ) : (
+            <EmptyState
+              icon="🍜"
+              title="No restaurants found"
+              subtitle="စားသောက်ဆိုင် မတွေ့ပါ"
+            />
+          )}
+        </View>
+      </ScrollView>
+    </MainLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
+  section: {
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+  },
+  sectionHeader: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    gap: 8,
+    marginBottom: 16,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#111827',
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  sectionSubtitle: {
+    fontSize: 14,
+    color: '#6B7280',
+  },
+  resultCount: {
+    fontSize: 14,
+    color: '#6B7280',
+  },
+  horizontalScroll: {
+    gap: 16,
+    paddingRight: 16,
+  },
+  horizontalCard: {
+    width: 280,
   },
 });
