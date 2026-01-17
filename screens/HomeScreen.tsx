@@ -1,17 +1,17 @@
-import React, { useCallback, useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { CategorySlider } from '@/components/home/CategorySlider';
 import { HeroBanner } from '@/components/home/HeroBanner';
 import { RestaurantCard } from '@/components/home/RestaurantCard';
 import { SearchBar } from '@/components/home/SearchBar';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { EmptyState } from '@/pages/EmptyState';
 import {
-  categories,
-  getPopularRestaurants,
-  getRestaurantsByCategory,
-  searchRestaurants,
+    categories,
+    getPopularRestaurants,
+    getRestaurantsByCategory,
+    searchRestaurants,
 } from '@/lib/mockData';
+import { EmptyState } from '@/screens/EmptyState';
+import React, { useCallback, useMemo, useState } from 'react';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 export default function HomeScreen({ navigation }: any) {
   const [searchQuery, setSearchQuery] = useState('');
